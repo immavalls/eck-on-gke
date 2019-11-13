@@ -1,0 +1,66 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1beta1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch-sample
+spec:
+  version: 7.4.2
+  nodeSets:
+  - name: default
+    count: 3
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+      node.store.allow_mmap: false
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: standard
+    podTemplate:
+      metadata:
+        labels:
+          foo: bar
+      spec:
+        containers:
+        - name: elasticsearch
+          env:
+          - name: ES_JAVA_OPTS
+            value: -Xms2g -Xmx2g
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 0.5
+            limits:
+              memory: 4Gi
+              cpu: 1
+---
+apiVersion: kibana.k8s.elastic.co/v1beta1
+kind: Kibana
+metadata:
+  name: kibana-sample
+spec:
+  version: 7.4.2
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch-sample
+---
+apiVersion: apm.k8s.elastic.co/v1beta1
+kind: ApmServer
+metadata:
+  name: apm-server-sample
+  namespace: default
+spec:
+  version: 7.4.2
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch-samples
