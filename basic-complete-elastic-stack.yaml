@@ -3,10 +3,10 @@ kind: Elasticsearch
 metadata:
   name: elasticsearch-sample
 spec:
-  version: 7.4.2
+  version: 7.3.2
   nodeSets:
   - name: default
-    count: 3
+    count: 1
     config:
       node.master: true
       node.data: true
@@ -45,7 +45,7 @@ kind: Kibana
 metadata:
   name: kibana-sample
 spec:
-  version: 7.4.2
+  version: 7.3.2
   http:
     service:
       spec:
@@ -60,7 +60,7 @@ metadata:
   name: apm-server-sample
   namespace: default
 spec:
-  version: 7.4.2
+  version: 7.3.2
   count: 1
   elasticsearchRef:
     name: elasticsearch-samples
