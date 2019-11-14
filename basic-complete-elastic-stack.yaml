@@ -63,4 +63,4 @@ spec:
   version: 7.3.2
   count: 1
   elasticsearchRef:
-    name: elasticsearch-samples
+    name: elasticsearch-sample
