@@ -41,6 +41,15 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 ### Install ECK
 
+- In order to deploy the operator, we have to setup google cloud RBAC with the following command:
+
+    ```shell
+    kubectl create clusterrolebinding \
+    cluster-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
+    ```
+
 - Deploy the operator. For Kubernetes clusters running version 1.13 or higher:
 
     ```shell
