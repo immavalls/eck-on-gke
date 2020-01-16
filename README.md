@@ -236,7 +236,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
     ![GKE pods during upgrade](./img/kubernetic-15.png)
 
-- As a default, the operator will upgrade Elasticsaerch one instance at a time.
+- As a default, the operator will upgrade Elasticsearch one instance at a time.
     - ECK uses StatefulSet-based orchestration from version 1.0+. StatefulSets with ECK allow for even faster upgrades and configuration changes, since upgrades use the same persistent volume, rather than replicating data to the new nodes.
     - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.0/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.0/k8s-pod-disruption-budget.html).
 
