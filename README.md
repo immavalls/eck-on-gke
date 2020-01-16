@@ -265,7 +265,7 @@ When we are done with the testing, it is recommended to follow the uninstall pro
 - Remove the operator.
 
     ```shell
-    kubectl delete -f https://download.elastic.co/downloads/eck/1.0.0-beta1/all-in-one.yaml
+    kubectl delete -f https://download.elastic.co/downloads/eck/1.0.0/all-in-one.yaml
     ```
 
 ### Delete GKE cluster
