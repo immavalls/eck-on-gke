@@ -1,4 +1,4 @@
-apiVersion: elasticsearch.k8s.elastic.co/v1beta1
+apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
   name: elasticsearch-sample
@@ -40,7 +40,7 @@ spec:
               memory: 4Gi
               cpu: 1
 ---
-apiVersion: kibana.k8s.elastic.co/v1beta1
+apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
   name: kibana-sample
@@ -54,7 +54,7 @@ spec:
   elasticsearchRef:
     name: elasticsearch-sample
 ---
-apiVersion: apm.k8s.elastic.co/v1beta1
+apiVersion: apm.k8s.elastic.co/v1
 kind: ApmServer
 metadata:
   name: apm-server-sample
