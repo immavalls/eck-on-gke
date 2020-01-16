@@ -8,12 +8,12 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 - [Google Cloud SDK](https://cloud.google.com/sdk/install) configured on your laptop.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/). At the moment, ECK requires version 1.11+. See [ECK requirements](https://www.elastic.co/guide/en/cloud-on-k8s/1.0/k8s-quickstart.html).
-- [kubernetic](https://kubernetic.com/). Kubernetes Desktop Client.
+- [kubernetic](https://kubernetic.com/) (*Optional*). Kubernetes Desktop Client.
 
 ## Create a GKE cluster
 
 - Go to [google cloud console](https://console.cloud.google.com), select [Kubernetes Engine](https://console.cloud.google.com/kubernetes/list) on the drop-down menu and create a GKE cluster.
-- Choose the options depending on your needs. If you want to get automatic k8s upgrades, choose release channel and the speed at which to update (rapid, regular, stable). Otherwise, choose a specific version. Install on a kubernetes 1.11+. If you create a small cluster, you might need to update the size to run this example.
+- Choose the options depending on your needs. If you want to get automatic k8s upgrades, choose release channel and the speed at which to update (rapid, regular, stable). Otherwise, choose a specific version. Install on a kubernetes 1.12+. If you create a small cluster, you might need to update the size to run this example.
 
     ![Kubernetes cluster creation](./img/gke-creation.png)
 
@@ -53,9 +53,8 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 - Deploy the operator. For Kubernetes clusters running version 1.13 or higher:
 
     ```shell
-    kubectl apply -f https://download.elastic.co/downloads/eck/1.0.0-beta1/all-in-one.yaml
+    kubectl apply -f https://download.elastic.co/downloads/eck/1.0.0/all-in-one.yaml
     ```
-    > For Kubernetes clusters running version 1.12 or lower run: kubectl apply -f https://download.elastic.co/downloads/eck/1.0.0-beta1/all-in-one-no-validation.yaml
 
 - This will create the custom resources, cluster roles, namespace elastic-system, the operator, etc. for us.
 - We can have a look at the operator logs:
@@ -186,7 +185,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 - To scale the Elastic Stack, edit the file [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml) and set the Elasticsearch `nodeCount`to 3.
 
     ```yaml
-    apiVersion: elasticsearch.k8s.elastic.co/v1beta1
+    apiVersion: elasticsearch.k8s.elastic.co/v1
     kind: Elasticsearch
     metadata:
     name: elasticsearch-sample
@@ -219,7 +218,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
     ![Kibana monitoring](./img/kibana-monitoring-3.png)
 
-- When ready, we will have a 3-node elasticsearch cluster, and the health should now be green (all replicas assigned).
+- When ready, we will have a 3-node elasticsearch cluster, and the health should now be green (all index replicas assigned).
 
 ### Upgrading the Elastic Stack
 
