@@ -13,7 +13,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 ## Create a GKE cluster
 
 - Go to [google cloud console](https://console.cloud.google.com), select [Kubernetes Engine](https://console.cloud.google.com/kubernetes/list) on the drop-down menu and create a GKE cluster.
-- Choose the options depending on your needs. If you want to get automatic k8s upgrades, choose release channel and the speed at which to update (rapid, regular, stable). Otherwise, choose a specific version. Install on a kubernetes 1.12+. If you create a small cluster, you might need to update the size to run this example.
+- Choose the options depending on your needs. If you want to get automatic k8s upgrades, choose release channel and the speed at which to update (rapid, regular, stable). Otherwise, choose a specific version. Install on a kubernetes 1.12+. **If you create a small cluster**, you might need to update the size to run this example. I usually run with **4 CPUs per node**, **15Gb RAM** each, as shown in the picture.
 
     ![Kubernetes cluster creation](./img/gke-creation.png)
 
