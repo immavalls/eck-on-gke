@@ -175,7 +175,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
     ![Elastic User secret](./img/kubernetic-7.png)
     ![Elastic password](./img/kubernetic-8.png)
 
-- Now we can log-in to our kibana with user `elastic`, and the retrieved password. We recommend [loading some kibana sample data](https://www.elastic.co/guide/en/kibana/7.8å/add-sample-data.html), and [enabling self Stack Monitoring](https://www.elastic.co/guide/en/kibana/7.8/xpack-monitoring.html), so we can use the monitoring data in the following sections.
+- Now we can log-in to our kibana with user `elastic`, and the retrieved password. We recommend [loading some kibana sample data](https://www.elastic.co/guide/en/kibana/7.8/add-sample-data.html), and [enabling self Stack Monitoring](https://www.elastic.co/guide/en/kibana/7.8/xpack-monitoring.html), so we can use the monitoring data in the following sections.
 
     ![Kibana monitoring](./img/kibana-monitoring-1.png)
 
