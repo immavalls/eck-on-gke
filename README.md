@@ -183,7 +183,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
     ![Kibana Logs](./img/filebeat-logs-1.png)
 
-- We should also be able to log into our Enterprise Search. We can use port forwarding `kubectl get service enterprise-search-sample-ent-http` to access it from our local workstation. And access the url https://localhost:3002/. The certificate will not be a valid one, accept it and you should see the following screen:
+- We should also be able to log into our Enterprise Search. We can use port forwarding `kubectl port-forward service/enterprise-search-sample-ent-http 3002` to access it from our local workstation. And access the url https://localhost:3002/. The certificate will not be a valid one, accept it and you should see the following screen:
 
     ![Enterprise Search](./img/entsearch-1.png)
 
@@ -257,13 +257,13 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 ### Upgrading the Elastic Stack
 
-- We can now proceed to upgrade the whole stack. It will just require to edit the file [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml) and replace all the `version: 7.8.0` with, for example, `version: 7.8.1` in all services (elasticsearch, apm, kibana, enterprise search, beats).
+- We can now proceed to upgrade the whole stack. It will just require to edit the file [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml) and replace all the `version: 7.8.0` with, for example, `version: 7.8.1` on all services (elasticsearch, apm, kibana, enterprise search, beats).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
     ```
 
-- When we apply the changes, the operator will take care of the dependencies. For example, it will first update Elasticsearch and APM, and wait for Elasticsearch to complete to update Kibana. We can follow the process of pod creation using kubectl or kubernetic.
+- When we apply the changes, the operator will take care of the dependencies. For example, it will first update Elasticsearch and APM, and wait for Elasticsearch to finish before upgrading Kibana. We can follow the process of pod creation using kubectl or kubernetic.
 
     ```shell
     kubectl get pods
@@ -271,11 +271,11 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
     ![GKE pods during upgrade](./img/kubernetic-15.png)
 
-- As a default, the operator will do a rolling upgrade, one Elasticsearch instance at a time.
+- As a default, the operator will do a rolling upgrade, one Elasticsearch instance at a time. It will terminate an instance and restart it in the newer version.
     - ECK uses StatefulSet-based orchestration from version `1.0+`. StatefulSets with ECK allow for even faster upgrades and configuration changes, since upgrades use the same persistent volume, rather than replicating data to the new nodes.
     - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-pod-disruption-budget.html).
 
-- After upgrading Elasticsearch, ECK will take care of upgrading the whole stack. For Kibana and APM it will create new pods in version `7.8.1` to replace the old ones version `7.8.0`.
+- After upgrading Elasticsearch, ECK will take care of upgrading the whole stack. For Kibana, Beats, Enterprise Search and APM it will create new pods in version `7.8.1` to replace the old ones version `7.8.0`.
 
 - We can check the deployed instances using kubernetic. Visualizing any of the pod specifications we can see that they are now running version `7.8.1`.
 
@@ -291,10 +291,10 @@ When we are done with the testing, it is recommended to follow the uninstall pro
 
 ### Delete elastic resources
 
-- Remove elastic resources from all namespaces.
+- Remove the Stack deployment:
 
     ```shell
-    kubectl delete elastic --all --all-namespaces
+    kubectl delete -f basic-complete-elastic-stack.yaml
     ```
 ​
 - Remove the operator.
