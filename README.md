@@ -59,7 +59,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 - Deploy the operator. For Kubernetes clusters running version 1.13 or higher:
 
     ```shell
-    kubectl apply -f https://download.elastic.co/downloads/eck/1.2.0/all-in-one.yaml
+    kubectl apply -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
     ```
 
 - This will create the custom resources, cluster roles, namespace elastic-system, the operator, etc. for us.
@@ -306,3 +306,8 @@ When we are done with the testing, it is recommended to follow the uninstall pro
 ### Delete GKE cluster
 
 Login to Google Cloud Console and remove your Google Kubernetes Engine.
+
+## Next steps
+
+- Deploy an Elasticsearch cluster with Beats and Kibana to monitor GKE, while also deploying a dedicated Elasticsearch monitoring cluster to monitor this deployment. Follow instructions [here](./monitoring-stack.md).
+- Deploy a hot/warm/cold cluster on a regional GKE.

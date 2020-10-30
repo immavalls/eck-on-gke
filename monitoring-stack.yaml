@@ -1,0 +1,795 @@
+---
+# Metricbeat 
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: metricbeat
+spec:
+  type: metricbeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  #Uncomment to setup dashboards
+  #kibanaRef:
+  #  name: kibana-monitoring
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        ssl.verification_mode: "none"
+    metricbeat:
+      autodiscover:
+        providers:
+          - type: kubernetes
+            scope: cluster
+            hints.enabled: true
+            templates:
+              - condition:
+                  contains:
+                    kubernetes.labels.scrape: es
+                config:
+                  # Elasticsearch module to collect ES data
+                  - module: elasticsearch
+                    metricsets:
+                      - ccr
+                      - cluster_stats
+                      - enrich
+                      - index
+                      - index_recovery
+                      - index_summary
+                      - ml_job
+                      - node_stats
+                      - shard
+                    period: 10s
+                    hosts: "https://${data.host}:${data.ports.https}"
+                    username: ${MONITORED_ES_USERNAME}
+                    password: ${MONITORED_ES_PASSWORD}
+                    # WARNING: disables TLS as the default certificate is not valid for the pod FQDN
+                    # TODO: switch this to "certificate" when available: https://github.com/elastic/beats/issues/8164
+                    ssl.verification_mode: "none"
+                    xpack.enabled: true
+              - condition:
+                  contains:
+                    kubernetes.labels.scrape: kb
+                config:
+                  - module: kibana
+                    metricsets:
+                      - stats
+                    period: 10s
+                    hosts: "https://${data.host}:${data.ports.https}"
+                    username: ${MONITORED_ES_USERNAME}
+                    password: ${MONITORED_ES_PASSWORD}
+                    # WARNING: disables TLS as the default certificate is not valid for the pod FQDN
+                    # TODO: switch this to "certificate" when available: https://github.com/elastic/beats/issues/8164
+                    ssl.verification_mode: "none"
+                    xpack.enabled: true
+              #- condition:
+              #    contains:
+              #      kubernetes.labels.scrape: mb
+              #  config:
+              #    - module: beat
+              #      metricsets:
+              #        - stats
+              #        - state
+              #      period: 10s
+              #      hosts: "http://localhost:5067"
+              #      xpack.enabled: true
+    processors:
+    - add_cloud_metadata: {}
+    logging.json: true
+    #http.enabled: true
+    #http.port: 5067
+  deployment:
+    podTemplate:
+      #metadata:
+      #  labels:
+      #    scrape: mb
+      spec:
+        serviceAccountName: metricbeat
+        automountServiceAccountToken: true
+        # required to read /etc/beat.yml
+        securityContext:
+          runAsUser: 0
+        containers:
+        - name: metricbeat
+          env:
+          - name: MONITORED_ES_USERNAME
+            value: elastic
+          - name: MONITORED_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-es-elastic-user
+          - name: MONITORING_ES_USERNAME
+            value: elastic
+          - name: MONITORING_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-monitoring-es-elastic-user
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+subjects:
+- kind: ServiceAccount
+  name: metricbeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: metricbeat
+  apiGroup: rbac.authorization.k8s.io
+---
+# Metricbeat Daemonset to monitor host resources and usage and Kubernetes usage
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: metricbeat-ds
+spec:
+  type: metricbeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch
+  #Uncomment to setup dashboards
+  #kibanaRef:
+  #  name: kibana
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        hosts: ["https://elasticsearch-monitoring-es-http.default.svc:9200"]
+        ssl.verification_mode: "none"
+    metricbeat:
+      autodiscover:
+        providers:
+        - hints:
+            default_config: {}
+            enabled: "true"
+          host: ${NODE_NAME}
+          type: kubernetes
+      modules:
+      - module: system
+        period: 10s
+        metricsets:
+        - cpu
+        - load
+        - memory
+        - network
+        - process
+        - process_summary
+        process:
+          include_top_n:
+            by_cpu: 5
+            by_memory: 5
+        processes:
+        - .*
+      - module: system
+        period: 1m
+        metricsets:
+        - filesystem
+        - fsstat
+        processors:
+        - drop_event:
+            when:
+              regexp:
+                system:
+                  filesystem:
+                    mount_point: ^/(sys|cgroup|proc|dev|etc|host|lib)($|/)
+      - module: kubernetes
+        period: 10s
+        host: ${NODE_NAME}
+        hosts:
+        - https://${NODE_NAME}:10250
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        ssl:
+          verification_mode: none
+        metricsets:
+        - node
+        - system
+        - pod
+        - container
+        - volume
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: metricbeat-ds
+        automountServiceAccountToken: true # some older Beat versions are depending on this settings presence in k8s context
+        containers:
+        - args:
+          - -e
+          - -c
+          - /etc/beat.yml
+          - -system.hostfs=/hostfs
+          name: metricbeat
+          volumeMounts:
+          - mountPath: /hostfs/sys/fs/cgroup
+            name: cgroup
+          - mountPath: /var/run/docker.sock
+            name: dockersock
+          - mountPath: /hostfs/proc
+            name: proc
+          env:
+          - name: MONITORING_ES_USERNAME
+            value: elastic
+          - name: MONITORING_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-monitoring-es-elastic-user
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        securityContext:
+          runAsUser: 0
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - hostPath:
+            path: /sys/fs/cgroup
+          name: cgroup
+        - hostPath:
+            path: /var/run/docker.sock
+          name: dockersock
+        - hostPath:
+            path: /proc
+          name: proc
+---
+# permissions needed for metricbeat
+# source: https://www.elastic.co/guide/en/beats/metricbeat/current/metricbeat-module-kubernetes.html
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat-ds
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - namespaces
+  - events
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "extensions"
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - deployments
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat-ds
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat-ds
+subjects:
+- kind: ServiceAccount
+  name: metricbeat-ds
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: metricbeat-ds
+  apiGroup: rbac.authorization.k8s.io
+---
+# filebeat resources
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat
+spec:
+  type: filebeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch
+  #Uncomment to setup dashboards
+  #kibanaRef:
+  #  name: kibana
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        hosts: ["https://elasticsearch-monitoring-es-http.default.svc:9200"]
+        ssl.verification_mode: "none"
+    filebeat:
+      autodiscover:
+        providers:
+        - type: kubernetes
+          node: ${NODE_NAME}
+          hints:
+            enabled: true
+            default_config:
+              type: container
+              paths:
+              - /var/log/containers/*${data.kubernetes.container.id}.log
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+    logging.json: true
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat
+        automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        securityContext:
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
+        containers:
+        - name: filebeat
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: MONITORING_ES_USERNAME
+              value: elastic
+            - name: MONITORING_ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: elastic
+                  name: elasticsearch-monitoring-es-elastic-user
+        volumes:
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+# Heartbeat monitoring Elasticsearch and Kibana 
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: heartbeat
+spec:
+  type: heartbeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch
+  kibanaRef:
+    name: kibana
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        hosts: ["https://elasticsearch-monitoring-es-http.default.svc:9200"]
+        ssl.verification_mode: "none"
+    heartbeat.monitors:
+    - type: tcp
+      id: elasticsearch-es-http
+      name: Elasticsearch
+      schedule: '@every 10s'
+      hosts: ["elasticsearch-es-http.default.svc:9200"]
+    - type: tcp
+      id: kibana-kb-http.default
+      name: Kibana
+      schedule: '@every 10s'
+      hosts: ["kibana-kb-http.default.svc:5601"]
+    - type: tcp
+      id: elasticsearch-monitoring-es-http
+      name: Monitoring Elasticsearch
+      schedule: '@every 30s'
+      hosts: ["elasticsearch-monitoring-es-http.default.svc:9200"]
+    - type: tcp
+      id: kibana-monitoring-kb-http
+      name: Monitoring Kibana
+      schedule: '@every 30s'
+      hosts: ["kibana-monitoring-kb-http.default.svc:5601"]
+  deployment:
+    replicas: 1
+    podTemplate:
+      spec:
+        securityContext:
+          runAsUser: 0
+        containers:
+        - name: heartbeat
+          env:
+          - name: MONITORING_ES_USERNAME
+            value: elastic
+          - name: MONITORING_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-monitoring-es-elastic-user
+---
+# Auditbeat checking file integrity and audits file operations on the host system
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: auditbeat
+spec:
+  type: auditbeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch
+  #Uncomment to setup dashboards
+  #kibanaRef:
+  #  name: kibana
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        hosts: ["https://elasticsearch-monitoring-es-http.default.svc:9200"]
+        ssl.verification_mode: "none"
+    auditbeat.modules:
+    - module: file_integrity
+      paths:
+      - /hostfs/bin
+      - /hostfs/usr/bin
+      - /hostfs/sbin
+      - /hostfs/usr/sbin
+      - /hostfs/etc
+      exclude_files:
+      - '(?i)\.sw[nop]$'
+      - '~$'
+      - '/\.git($|/)'
+      scan_at_start: true
+      scan_rate_per_sec: 50 MiB
+      max_file_size: 100 MiB
+      hash_types: [sha1]
+      recursive: true
+    - module: auditd
+      audit_rules: |
+        # Executions
+        -a always,exit -F arch=b64 -S execve,execveat -k exec
+
+        # Unauthorized access attempts
+        -a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EACCES -k access
+        -a always,exit -F arch=b64 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
+
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+    - add_process_metadata:
+        match_pids: ['process.pid']
+  daemonSet:
+    podTemplate:
+      spec:
+        hostPID: true  # Required by auditd module
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        automountServiceAccountToken: true # some older Beat versions are depending on this settings presence in k8s context
+        securityContext:
+          runAsUser: 0
+        volumes:
+        - name: bin
+          hostPath:
+            path: /bin
+        - name: usrbin
+          hostPath:
+            path: /usr/bin
+        - name: sbin
+          hostPath:
+            path: /sbin
+        - name: usrsbin
+          hostPath:
+            path: /usr/sbin
+        - name: etc
+          hostPath:
+            path: /etc
+        - name: run-containerd
+          hostPath:
+            path: /run/containerd
+            type: DirectoryOrCreate
+        # Uncomment the below when running on GKE. See https://github.com/elastic/beats/issues/8523 for more context.
+        - name: run
+          hostPath:
+            path: /run
+        initContainers:
+        - name: cos-init
+          image: docker.elastic.co/beats/auditbeat:7.9.2
+          volumeMounts:
+          - name: run
+            mountPath: /run
+          command: ['sh', '-c', 'export SYSTEMD_IGNORE_CHROOT=1 && systemctl stop systemd-journald-audit.socket && systemctl mask systemd-journald-audit.socket && systemctl restart systemd-journald']
+        containers:
+        - name: auditbeat
+          securityContext:
+            capabilities:
+              add:
+              # Capabilities needed for auditd module
+              - 'AUDIT_READ'
+              - 'AUDIT_WRITE'
+              - 'AUDIT_CONTROL'
+          env:
+          - name: MONITORING_ES_USERNAME
+            value: elastic
+          - name: MONITORING_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-monitoring-es-elastic-user
+          volumeMounts:
+          - name: bin
+            mountPath: /hostfs/bin
+            readOnly: true
+          - name: sbin
+            mountPath: /hostfs/sbin
+            readOnly: true
+          - name: usrbin
+            mountPath: /hostfs/usr/bin
+            readOnly: true
+          - name: usrsbin
+            mountPath: /hostfs/usr/sbin
+            readOnly: true
+          - name: etc
+            mountPath: /hostfs/etc
+            readOnly: true
+          # Directory with root filesystems of containers executed with containerd, this can be
+          # different with other runtimes. This volume is needed to monitor the file integrity
+          # of files in containers.
+          - name: run-containerd
+            mountPath: /run/containerd
+            readOnly: true
+---
+# Packetbeat example
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: packetbeat
+spec:
+  type: packetbeat
+  version: 7.9.2
+  elasticsearchRef:
+    name: elasticsearch
+  #Uncomment to setup dashboards
+  #kibanaRef:
+  #  name: kibana
+  config:
+    monitoring:
+      enabled: true
+      elasticsearch:
+        username: ${MONITORING_ES_USERNAME}
+        password: ${MONITORING_ES_PASSWORD}
+        hosts: ["https://elasticsearch-monitoring-es-http.default.svc:9200"]
+        ssl.verification_mode: "none"
+    packetbeat.interfaces.device: any
+    packetbeat.protocols:
+    - type: dns
+      ports: [53]
+      include_authorities: true
+      include_additionals: true
+    - type: http
+      ports: [80, 8000, 8080, 9200]
+    packetbeat.flows:
+      timeout: 30s
+      period: 10s
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+  daemonSet:
+    podTemplate:
+      spec:
+        terminationGracePeriodSeconds: 30
+        hostNetwork: true
+        automountServiceAccountToken: true # some older Beat versions are depending on this settings presence in k8s context
+        dnsPolicy: ClusterFirstWithHostNet
+        containers:
+        - name: packetbeat
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+              - NET_ADMIN
+          env:
+          - name: MONITORING_ES_USERNAME
+            value: elastic
+          - name: MONITORING_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-monitoring-es-elastic-user
+---
+# Elasticsearch and Kibana resources
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 7.9.2
+  nodeSets:
+  - name: default
+    count: 3
+    config:
+      node.store.allow_mmap: false
+      # https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-metricbeat.html
+      xpack.monitoring.collection.enabled: true
+      xpack.monitoring.elasticsearch.collection.enabled: false
+    podTemplate:
+      metadata:
+        labels:
+          scrape: es
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+spec:
+  version: 7.9.2
+  count: 1
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch
+  config:
+    # https://www.elastic.co/guide/en/kibana/current/monitoring-metricbeat.html
+    xpack.monitoring.kibana.collection.enabled: false
+    xpack.monitoring.collection.enabled: true
+  podTemplate:
+    metadata:
+      labels:
+        scrape: kb
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch-monitoring
+spec:
+  version: 7.9.2
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+      node.store.allow_mmap: false
+      xpack.monitoring.collection.enabled: true
+      xpack.monitoring.elasticsearch.collection.enabled: true
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi
+        storageClassName: standard
+    podTemplate:
+      spec:
+        containers:
+        - name: elasticsearch
+          env:
+          - name: ES_JAVA_OPTS
+            value: -Xms2g -Xmx2g
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 1
+            limits:
+              memory: 4Gi
+              cpu: 2
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana-monitoring
+spec:
+  version: 7.9.2
+  count: 1
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  config:
+    # enable the UI to reflect container level CPU usage, only displays info if CPU limits are set on the monitored ES cluster
+    # https://www.elastic.co/guide/en/kibana/current/monitoring-settings-kb.html
+    xpack.monitoring.ui.container.elasticsearch.enabled: true
+    xpack.monitoring.kibana.collection.enabled: true
+    xpack.monitoring.collection.enabled: true
