@@ -59,7 +59,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 - Deploy the operator. For Kubernetes clusters running version 1.13 or higher:
 
     ```shell
-    kubectl apply -f https://download.elastic.co/downloads/eck/1.2.1/all-in-one.yaml
+    kubectl apply -f https://download.elastic.co/downloads/eck/1.3.0/all-in-one.yaml
     ```
 
 - This will create the custom resources, cluster roles, namespace elastic-system, the operator, etc. for us.
@@ -100,11 +100,11 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 ### Installing the Elastic Stack
 
-- We will now install an Elastic Stack defined in the following file: [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml). You can check basic samples [here](https://github.com/elastic/cloud-on-k8s/tree/1.2/config/samples) and the documentation [here](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-orchestrating-elastic-stack-applications.html).
+- We will now install an Elastic Stack defined in the following file: [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml). You can check basic samples [here](https://github.com/elastic/cloud-on-k8s/tree/1.3/config/samples) and the documentation [here](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-orchestrating-elastic-stack-applications.html).
 - It's a simple definition for an Elastic Stack version 7.3.2, with a one-node Elasticsearch cluster, an APM a server and a single Kibana instance.
     - The Elasticsearch nodes in the example are configured to limit container resources to 2G memory and 1 CPU.
-    - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
-    - The deployment will also mount on a 5Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-volume-claim-templates.html).
+    - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
+    - The deployment will also mount on a 5Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-volume-claim-templates.html).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
@@ -158,7 +158,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 - Once the external IP is available, we can visit our kibana at https://<EXTERNAL_IP>:5601/. In the example: https://34.77.8.197:5601/
 
-- The certificate presented to us is self-signed one. We could have assigned a valid http certificate. See the [docs](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-custom-http-certificate.html).
+- The certificate presented to us is self-signed one. We could have assigned a valid http certificate. See the [docs](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-custom-http-certificate.html).
 
 - The operator has created a secret for our superuser elastic. Let's go get it. Two options: via kubectl retrieve the password (remove the % at the end):
 
@@ -273,7 +273,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 
 - As a default, the operator will do a rolling upgrade, one Elasticsearch instance at a time. It will terminate an instance and restart it in the newer version.
     - ECK uses StatefulSet-based orchestration from version `1.0+`. StatefulSets with ECK allow for even faster upgrades and configuration changes, since upgrades use the same persistent volume, rather than replicating data to the new nodes.
-    - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-pod-disruption-budget.html).
+    - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-pod-disruption-budget.html).
 
 - After upgrading Elasticsearch, ECK will take care of upgrading the whole stack. For Kibana, Beats, Enterprise Search and APM it will create new pods in version `7.8.1` to replace the old ones version `7.8.0`.
 
@@ -300,7 +300,7 @@ When we are done with the testing, it is recommended to follow the uninstall pro
 - Remove the operator.
 
     ```shell
-    kubectl delete -f https://download.elastic.co/downloads/eck/1.2.0/all-in-one.yaml
+    kubectl delete -f https://download.elastic.co/downloads/eck/1.3.0/all-in-one.yaml
     ```
 
 ### Delete GKE cluster
@@ -309,5 +309,5 @@ Login to Google Cloud Console and remove your Google Kubernetes Engine.
 
 ## Next steps
 
-- Deploy an Elasticsearch cluster with Beats and Kibana to monitor GKE, while also deploying a dedicated Elasticsearch monitoring cluster to monitor this deployment. Follow instructions [here](./monitoring-stack.md).
+- Deploy an Elasticsearch cluster with Beats and Kibana to monitor GKE, while also deploying a dedicated Elasticsearch monitoring cluster to monitor this deployment. Follow instructions [here](./monitoring/monitoring-stack.md).
 - Deploy a hot/warm/cold cluster on a regional GKE.

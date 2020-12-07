@@ -1,0 +1,76 @@
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 7.9.3
+  nodeSets:
+  - name: default
+    count: 3
+    config:
+      node.store.allow_mmap: false
+      # https://www.elastic.co/guide/en/elasticsearch/reference/7.9/configuring-metricbeat.html
+      xpack.monitoring.collection.enabled: true
+      xpack.monitoring.elasticsearch.collection.enabled: false
+    podTemplate:
+      metadata:
+        labels:
+          stack-monitoring_elastic_co/type: es # to allow autodiscover by metricbeat
+        annotations:
+          co.elastic.logs/enabled: "true"
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+spec:
+  version: 7.9.3
+  count: 1
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch
+  config:
+    # https://www.elastic.co/guide/en/kibana/7.9/monitoring-metricbeat.html
+    xpack.monitoring.kibana.collection.enabled: false
+    xpack.monitoring.collection.enabled: true
+  podTemplate:
+    metadata:
+      labels:
+        stack-monitoring_elastic_co/type: kb # to allow autodiscover by metricbeat
+      annotations:
+        co.elastic.logs/enabled: "true"
+---
+apiVersion: apm.k8s.elastic.co/v1
+kind: ApmServer
+metadata:
+  name: apm
+spec:
+  version: 7.9.3
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
+  kibanaRef:
+    name: kibana
+  config:
+    # https://www.elastic.co/guide/en/apm/server/7.9/monitoring-metricbeat-collection.html
+    http.enabled: true
+    http.port: 5066
+    http.host: 0.0.0.0
+    monitoring.enabled: false
+  podTemplate:
+    metadata:
+      labels:
+        stack-monitoring_elastic_co/type: beat # to allow autodiscover by metricbeat
+      annotations:
+        co.elastic.logs/enabled: "true"
+    spec:
+      containers:
+      - name: apm-server
+        ports:
+        - containerPort: 5066
+          name: monitoring
+          protocol: TCP

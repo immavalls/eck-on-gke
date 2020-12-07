@@ -24,7 +24,7 @@ We will also:
 - **TODO**: Review using https://www.elastic.co/blog/elastic-stack-monitoring-with-elastic-cloud-on-kubernetes, change scrape labels to `stack-monitoring.elastic.co/type`
 - Follow instructions to create a GKE cluster [here](./README.md#create-a-gke-cluster).
 - Install ECK as detailed [here](./README.md#install-eck).
-- Apply a license: https://www.elastic.co/guide/en/cloud-on-k8s/1.2/k8s-licensing.html
+- Apply a license: https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-licensing.html
 
     - Either start a trial:
 

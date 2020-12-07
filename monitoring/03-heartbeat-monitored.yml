@@ -1,0 +1,53 @@
+---
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: heartbeat
+spec:
+  type: heartbeat
+  version: 7.9.3
+  elasticsearchRef:
+    name: elasticsearch
+  config:
+    http.enabled: true
+    http.port: 5066
+    http.host: 0.0.0.0
+    monitoring.enabled: false
+    heartbeat.monitors:
+    - type: tcp
+      id: elasticsearch-es-http
+      name: Elasticsearch
+      schedule: '@every 10s'
+      hosts: ["elasticsearch-es-http.default.svc:9200"]
+    - type: tcp
+      id: kibana-kb-http
+      name: Kibana
+      schedule: '@every 10s'
+      hosts: ["kibana-kb-http.default.svc:5601"]
+    - type: tcp
+      id: elasticsearch-monitoring-es-http
+      name: Monitoring Elasticsearch
+      schedule: '@every 30s'
+      hosts: ["elasticsearch-monitoring-es-http.default.svc:9200"]
+    - type: tcp
+      id: kibana-monitoring-kb-http
+      name: Monitoring Kibana
+      schedule: '@every 30s'
+      hosts: ["kibana-monitoring-kb-http.default.svc:5601"]
+  deployment:
+    replicas: 1
+    podTemplate:
+      metadata:
+        labels:
+          stack-monitoring_elastic_co/type: beat
+        annotations:
+          co.elastic.logs/enabled: "true"
+      spec:
+        securityContext:
+          runAsUser: 0
+        containers:
+          - name: heartbeat
+            ports:
+            - containerPort: 5066
+              name: monitoring
+              protocol: TCP

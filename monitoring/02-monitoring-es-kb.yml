@@ -1,0 +1,30 @@
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch-monitoring
+spec:
+  version: 7.9.3
+  nodeSets:
+  - name: default
+    count: 3
+    config:
+      node.store.allow_mmap: false
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana-monitoring
+spec:
+  version: 7.9.3
+  count: 1
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  config:
+    # enable the UI to reflect container level CPU usage, only displays info if CPU limits are set on the monitored ES cluster
+    # https://www.elastic.co/guide/en/kibana/current/monitoring-settings-kb.html
+    xpack.monitoring.ui.container.elasticsearch.enabled: true
