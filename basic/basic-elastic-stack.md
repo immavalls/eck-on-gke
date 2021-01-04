@@ -191,14 +191,14 @@
 ​
 - Make sure we removed all the resources:
 
-```shell
-> kubectl get elastic
-No resources found in default namespace.
+    ```shell
+    > kubectl get elastic
+    No resources found in default namespace.
 
-> kubectl get service
-NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
-kubernetes              ClusterIP      10.23.240.1     <none>         443/TCP          7d11h
+    > kubectl get service
+    NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)          AGE
+    kubernetes              ClusterIP      10.23.240.1     <none>         443/TCP          7d11h
 
-> kubectl get pvc
-No resources found in default namespace.
-```
+    > kubectl get pvc
+    No resources found in default namespace.
+    ```
