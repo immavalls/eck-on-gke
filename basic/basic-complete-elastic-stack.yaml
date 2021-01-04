@@ -3,7 +3,7 @@ kind: Elasticsearch
 metadata:
   name: elasticsearch-sample
 spec:
-  version: 7.8.0
+  version: 7.9.3
   nodeSets:
   - name: default
     count: 1
@@ -20,7 +20,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 5Gi
+            storage: 50Gi
         storageClassName: standard
     podTemplate:
       metadata:
@@ -45,7 +45,7 @@ kind: Kibana
 metadata:
   name: kibana-sample
 spec:
-  version: 7.8.0
+  version: 7.9.3
   http:
     service:
       spec:
@@ -60,7 +60,7 @@ metadata:
   name: apm-server-sample
   namespace: default
 spec:
-  version: 7.8.0
+  version: 7.9.3
   count: 1
   elasticsearchRef:
     name: elasticsearch-sample
@@ -73,7 +73,7 @@ kind: EnterpriseSearch
 metadata:
   name: enterprise-search-sample
 spec:
-  version: 7.8.0
+  version: 7.9.3
   count: 1
   elasticsearchRef:
     name: elasticsearch-sample
