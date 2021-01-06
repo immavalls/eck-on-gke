@@ -1,0 +1,200 @@
+---
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: metricbeat-monitoring
+spec:
+  type: metricbeat
+  version: 7.10.1
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  kibanaRef:
+    name: kibana-monitoring
+  config:
+    metricbeat:
+      autodiscover:
+        providers:
+          - type: kubernetes
+            scope: cluster
+            hints.enabled: true
+            templates:
+              - condition:
+                  equals.kubernetes.labels.stack-monitoring_elastic_co/type: es
+                config:
+                  - module: elasticsearch
+                    period: 10s
+                    hosts: "https://${data.host}:${data.ports.https}"
+                    username: ${MONITORED_ES_USERNAME}
+                    password: ${MONITORED_ES_PASSWORD}
+                    ssl.verification_mode: "none"
+                    xpack.enabled: true
+              - condition:
+                  equals.kubernetes.labels.stack-monitoring_elastic_co/type: kb
+                config:
+                  - module: kibana
+                    period: 10s
+                    hosts: "https://${data.host}:${data.ports.https}"
+                    username: ${MONITORED_ES_USERNAME}
+                    password: ${MONITORED_ES_PASSWORD}
+                    ssl.verification_mode: "none"
+                    xpack.enabled: true
+              - condition:
+                  equals.kubernetes.labels.monitoring_label_type: ls
+                config:
+                  - module: logstash
+                    metricsets:
+                      - node
+                      - node_stats
+                    period: 10s
+                    hosts: "http://${data.host}:9600"
+                    username: ${MONITORED_ES_USERNAME}
+                    password: ${MONITORED_ES_PASSWORD}
+                    ssl.verification_mode: "none"
+                    xpack.enabled: true
+    processors:
+    - add_cloud_metadata: {}
+    logging.json: true
+  deployment:
+    podTemplate:
+      spec:
+        serviceAccountName: metricbeat
+        automountServiceAccountToken: true
+        # required to read /etc/beat.yml
+        securityContext:
+          runAsUser: 0
+        containers:
+        - name: metricbeat
+          env:
+          - name: MONITORED_ES_USERNAME
+            value: elastic
+          - name: MONITORED_ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: elastic
+                name: elasticsearch-es-elastic-user
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+subjects:
+- kind: ServiceAccount
+  name: metricbeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: metricbeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat-monitoring
+spec:
+  type: filebeat
+  version: 7.10.1
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  kibanaRef:
+    name: kibana-monitoring
+  config:
+    filebeat:
+      autodiscover:
+        providers:
+        - type: kubernetes
+          host: ${HOSTNAME}
+          hints:
+            enabled: true
+            default_config:
+              enabled: false
+              type: container
+              paths:
+              - /var/log/containers/*${data.kubernetes.container.id}.log
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+    logging.json: true
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat
+        automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        securityContext:
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
+        containers:
+        - name: filebeat
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+        volumes:
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io

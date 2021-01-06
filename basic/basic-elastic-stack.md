@@ -1,6 +1,6 @@
 # Basic Elastic Stack Deployment
 
-- Once we installed GKE, we can proceed to deploy a simple example.
+- Once we [installed GKE and ECK](../install-gke-and-eck.md), we can proceed to deploy a simple example.
 - We will now install an Elastic Stack defined in the following file: [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml). You can check basic samples [here](https://github.com/elastic/cloud-on-k8s/tree/1.3/config/samples) and the documentation [here](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-orchestrating-elastic-stack-applications.html).
 - It's a simple definition for an Elastic Stack version `7.9.3`, with a one-node Elasticsearch cluster, an APM server, EnterpriseSearch and a single Kibana instance.
     - The Elasticsearch nodes in the example are configured to limit container resources to 2G memory and 1 CPU.
@@ -47,7 +47,7 @@
     kibana-sample-kb-http               LoadBalancer   10.64.2.42     34.77.8.197      5601:32061/TCP   2m52s
     ```
 
-- Or get it with kubernetic, viewing the `kibana-sample-kb-http` service.  When the load balancer is provisioned, we will see the external IP under `status.loadBalancer.ingress.ip`.
+- Or get it with kubernetic, viewing the `kibana-sample-kb-http` service.  When the [external Load Balancer](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#external-load-balancer-providers) is provisioned, we will see the external IP under `status.loadBalancer.ingress.ip`.
 
     ![Kibana external IP](./img/kubernetic-6.png)
 
@@ -85,6 +85,12 @@
     - You can login using the same `elastic` user and password we used for Kibana. Where you can choose between [Elastic App Search](https://www.elastic.co/app-search/) and [Elastic Workplace Search](https://www.elastic.co/workplace-search).
 
         ![Enterprise Search](./img/entsearch-2.png)
+
+- Elasticsearch has not been published, though we can always use port forwarding to access our cluster directly. In production, consider [trafic splitting](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-traffic-splitting.html) to allow clients to access Elaticsearch.
+
+    ```shell
+    kubectl port-forward service/elasticsearch-sample-es-http 9200
+    ```
 
 ### Scaling Elasticsearch
 
@@ -180,9 +186,9 @@
 
     ![Kibana monitoring](./img/kibana-monitoring-3-upgraded.png)
 
-## Uninstall process
+## Clean-up 
 
-- When we are done with the testing, it is recommended to follow the uninstall process to liberate resources.
+- When we are done with the testing, it is recommended to remove the deployments to liberate resources.
 - Remove the Stack deployment:
 
     ```shell

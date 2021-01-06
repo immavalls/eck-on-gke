@@ -1,0 +1,60 @@
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch-monitoring
+spec:
+  version: 7.10.1
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      node.roles: [ master, data, ingest ]
+      node.store.allow_mmap: false
+    podTemplate:
+      spec:
+          initContainers:
+          - name: sysctl
+            securityContext:
+              privileged: true
+            command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+          containers:
+          - name: elasticsearch
+            env:
+            - name: ES_JAVA_OPTS
+              value: -Xms500m -Xmx500m
+            resources:
+              requests:
+                #cpu: 1 # no request means 0.1 by default (too little CPU)
+                memory: 1Gi
+              limits:
+                memory: 1Gi
+                cpu: 1
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi  
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana-monitoring
+spec:
+  version: 7.10.1
+  count: 1
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch-monitoring
+  config:
+    # enable the UI to reflect container level CPU usage, only displays info if CPU limits are set on the monitored ES cluster
+    # https://www.elastic.co/guide/en/kibana/current/monitoring-settings-kb.html
+    xpack.monitoring.ui.container.elasticsearch.enabled: true
+    monitoring.kibana.collection.enabled: false
