@@ -4,12 +4,14 @@ kind: Elasticsearch
 metadata:
   name: elasticsearch
 spec:
-  version: 7.10.1
+  version: 7.12.1
   nodeSets:
   - name: default
     count: 3
     config:
       node.roles: [ master, data, ingest ]
+      # This setting could have performance implications for production clusters.
+      # See: https://www.elastic.co/guide/en/cloud-on-k8s/master/k8s-virtual-memory.html
       node.store.allow_mmap: false
       # https://www.elastic.co/guide/en/elasticsearch/reference/7.9/configuring-metricbeat.html
       xpack.monitoring.collection.enabled: true
@@ -53,7 +55,7 @@ kind: Kibana
 metadata:
   name: kibana
 spec:
-  version: 7.10.1
+  version: 7.12.1
   count: 1
   http:
     service:
