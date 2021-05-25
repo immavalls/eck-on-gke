@@ -29,7 +29,7 @@ When we are done with the testing, it is recommended to follow the uninstall pro
 Once this is done for each example, we can remove the operator.
 
 ```shell
-kubectl delete -f https://download.elastic.co/downloads/eck/1.3.1/all-in-one.yaml
+kubectl delete -f https://download.elastic.co/downloads/eck/1.5.0/all-in-one.yaml
 ```
 
 And delete the GKE cluster. Login to Google Cloud Console and remove the cluster you created.

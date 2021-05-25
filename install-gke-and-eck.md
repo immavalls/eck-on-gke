@@ -36,7 +36,7 @@ Or using the Google Cloud Console.
 - Once the cluster is up and running, connect kubectl. Replace with the appropiate cluster name (in the example `imma-k8s-cluster`) and zone (`europe-west1-b` in the example). Hitting the `connect` button in the console will also give you this command.
 
     ```shell
-    gcloud container clusters get-credentials imma-k8s-cluster --zone europe-west1-b
+    gcloud container clusters get-credentials imma-k8s-cluster --zone europe-west1-b --project immas-k8s-project
     ```
 
 - This command will fetch your k8s cluster endpoint and configure kubectl accordingly. The output should look like this:
@@ -70,10 +70,31 @@ Or using the Google Cloud Console.
 - Deploy the operator.
 
     ```shell
-    kubectl apply -f https://download.elastic.co/downloads/eck/1.3.1/all-in-one.yaml
+    kubectl apply -f https://download.elastic.co/downloads/eck/1.5.0/all-in-one.yaml
     ```
 
 - This will create the custom resources, cluster roles, namespace elastic-system, the operator, etc. for us.
+
+```
+namespace/elastic-system created
+serviceaccount/elastic-operator created
+secret/elastic-webhook-server-cert created
+configmap/elastic-operator created
+customresourcedefinition.apiextensions.k8s.io/agents.agent.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/apmservers.apm.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/beats.beat.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/elasticsearches.elasticsearch.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/enterprisesearches.enterprisesearch.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/kibanas.kibana.k8s.elastic.co created
+clusterrole.rbac.authorization.k8s.io/elastic-operator created
+clusterrole.rbac.authorization.k8s.io/elastic-operator-view created
+clusterrole.rbac.authorization.k8s.io/elastic-operator-edit created
+clusterrolebinding.rbac.authorization.k8s.io/elastic-operator created
+service/elastic-webhook-server created
+statefulset.apps/elastic-operator created
+validatingwebhookconfiguration.admissionregistration.k8s.io/elastic-webhook.k8s.elastic.co created
+```
+
 - We can have a look at the operator logs:
 
     ```shell
@@ -131,8 +152,22 @@ EOF
 
 And we can check the license:
 
-```shell
+```json
 kubectl -n elastic-system get configmap elastic-licensing -o json | jq .data
+{
+  "eck_license_level": "basic",
+  "enterprise_resource_units": "0",
+  "timestamp": "2021-05-25T07:26:31Z",
+  "total_managed_memory": "0.00GB"
+}
+
+kubectl -n elastic-system get configmap elastic-licensing -o json | jq .data
+{
+  "eck_license_level": "enterprise_trial",
+  "enterprise_resource_units": "0",
+  "timestamp": "2021-05-25T07:28:31Z",
+  "total_managed_memory": "0.00GB"
+}
 ```
 
 The licese might take a few minutes to apply. Make sure you wait for it to show `enterprise_trial`:
