@@ -89,10 +89,10 @@
     ```
 
     ```shell
-    W1P0V8s4q477J0PR0SMO1jJo
+    3KrrN58D83BfjdB4DX49m93z
     ```
 
-- Or visit the secrets section using kubernetic. Filter for `elastic-user` (top right) and get the password in plain text under the `Specifications` section.
+- Or visit the secrets section using kubernetic. Select  `elasticsearch-samples-es-elastic-user` and get the password in plain text under the `Specifications` section.
 
     ![Elastic User secret](./img/kubernetic-7.png)
     ![Elastic password](./img/kubernetic-8.png)
@@ -189,6 +189,13 @@
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
+    ```
+
+    ```shell
+    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample configured
+    kibana.kibana.k8s.elastic.co/kibana-sample configured
+    apmserver.apm.k8s.elastic.co/apm-server-sample configured
+    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample configured
     ```
 
 - When we apply the changes, the operator will take care of the dependencies. For example, it will first update Elasticsearch and APM, and wait for Elasticsearch to finish before upgrading Kibana. We can follow the process of pod creation using kubectl or kubernetic.
