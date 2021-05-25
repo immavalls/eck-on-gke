@@ -164,7 +164,8 @@ The licese might take a few minutes to apply. Make sure you wait for it to show 
   "enterprise_resource_units": "0",
   "timestamp": "2021-05-25T07:26:31Z",
   "total_managed_memory": "0.00GB"
-}```
+}
+```
 
 ```json
 {
