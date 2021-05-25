@@ -2,7 +2,7 @@
 
 - Once we've [installed GKE and ECK](../install-gke-and-eck.md), we can proceed to create an ELK stack, and a dedicated [monitoring cluster](https://www.elastic.co/guide/en/elasticsearch/reference/current/monitor-elasticsearch-cluster.html). 
 - We'll use [Metricbeat collection](https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-metricbeat.html) to gather the data.
-- The example is built based on the following blog: https://www.elastic.co/blog/elastic-stack-monitoring-with-elastic-cloud-on-kubernetes
+- The example is built based on the following blog: https://www.elastic.co/blog/elastic-stack-monitoring-with-elastic-cloud-on-kubernetes and examples the example in https://github.com/elastic/cloud-on-k8s/blob/master/config/recipes/beats/stack_monitoring.yaml
 - This is not a production-ready example, just a simple example to get you started. 
     - We'll be deploying the ELK stack and the monitoring cluster in the same `default` k8s namespace.
 - The following diagram showcases the deployment.
@@ -134,9 +134,9 @@
 
     ![Empty monitoring](./img/empty-monitoring.png)
 
-## Deploy Monitoring Beats
+## Deploy the Monitoring Beats
 
-- We'll now create the Metricbeat and Filebeat collectors defined in [04-monitoring-beats.yaml](./04-monitoring-beats.yaml). 
+- We'll now create the Metricbeat and Filebeat collectors defined in [04-monitoring-beats.yaml](./04-monitoring-beats.yaml).
 - Metricbeat will be a [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) with a single Pod, deployed on the same `default` namespace as the rest of the clusters, collecting data from Elasticsearch, Logstash and Kibana.
 - We configure 3 modules `module: elasticsearch`, `module: kibana` and `module: logstash`, and apply the right conditions to each. For example, for `elasticsearch` we'll use the label condition `equals.kubernetes.labels.stack-monitoring_elastic_co/type: es`:
 
@@ -153,9 +153,9 @@
             ssl.verification_mode: "none"
             xpack.enabled: true
     ```
-- Filebeat is deployed as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). We need it running on each k8s host, to pick any logs we might have por instances running on that host. 
+- Filebeat is deployed as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). We need it running on each k8s host, to pick any logs we might have por instances running on each kubernetes worker host. 
 - Filebeat will use hints to collect logs from the Pods that have `co.elastic.logs/enabled: "true"`. In our example, Elasticsearch and Kibana.
-- Note that it's configured to send data to the `elasticsearch-monitoring` cluster on the same k8s namespace.
+- Note that it's configured to send data to the `elasticsearch-monitoring` cluster on the **same k8s namespace**.
 
     ```yaml
     elasticsearchRef:
@@ -165,6 +165,7 @@
 
     ```shell
     > kubectl apply -f 04-monitoring-beats.yaml
+    
     beat.beat.k8s.elastic.co/metricbeat-monitoring created
     clusterrole.rbac.authorization.k8s.io/metricbeat created
     serviceaccount/metricbeat created
@@ -175,7 +176,13 @@
     clusterrolebinding.rbac.authorization.k8s.io/filebeat created
     ```
 
-- Note also that we needed to create some cluster roles and service acounts to give Beats the [right authorizations for autodiscover](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-beat-configuration.html#k8s-beat-role-based-access-control-for-beats).
+- We can use Kubernetic to have a look at the Metricbeat Deployment and the Filebeat DaemonSet.
+
+  ![Metricbeat Deployment](./img/kubernetic-metricbeat-deployment.png)  
+  ![Filebeat DaemonSet](./img/kubernetic-filebeat-daemon-set.png) 
+  ![Beat's pods](./img/kubernetic-beats-pods.png)
+
+- Note also that we needed to create some cluster roles and service acounts to give Beats the [right authorizations for autodiscover](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-beat-configuration.html#k8s-beat-role-based-access-control-for-beats). Make sure you check requirements more recent versions, as they can change.
 - Once this is in place, we can now go back to Kibana Stack Monitoring and we should see our stack.
 
     ![Kibana Stack Monitoring](./img/kibana-stack-monitoring.png)
