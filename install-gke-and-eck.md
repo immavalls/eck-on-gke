@@ -152,31 +152,25 @@ EOF
 
 And we can check the license:
 
-```json
+```shell
 kubectl -n elastic-system get configmap elastic-licensing -o json | jq .data
+```
+
+The licese might take a few minutes to apply. Make sure you wait for it to show `enterprise_trial` insted of `basic`:
+
+```json
 {
   "eck_license_level": "basic",
   "enterprise_resource_units": "0",
   "timestamp": "2021-05-25T07:26:31Z",
   "total_managed_memory": "0.00GB"
-}
-
-kubectl -n elastic-system get configmap elastic-licensing -o json | jq .data
-{
-  "eck_license_level": "enterprise_trial",
-  "enterprise_resource_units": "0",
-  "timestamp": "2021-05-25T07:28:31Z",
-  "total_managed_memory": "0.00GB"
-}
-```
-
-The licese might take a few minutes to apply. Make sure you wait for it to show `enterprise_trial`:
+}```
 
 ```json
 {
   "eck_license_level": "enterprise_trial",
   "enterprise_resource_units": "0",
-  "timestamp": "2021-01-04T17:17:42Z",
+  "timestamp": "2021-05-25T07:28:31Z",
   "total_managed_memory": "0.00GB"
 }
 ```
