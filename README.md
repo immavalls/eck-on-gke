@@ -17,8 +17,8 @@ To run the following examples, follow [these steps](./install-gke-and-eck.md) to
 
 ## Examples
 
-1. [Basic Elastic Stack Deployment](./basic/basic-elastic-stack.md)
-2. [Deploy the Elastic Stack and a dedicated Monitoring Cluster](./monitoring/monitoring-stack.md).
+1. [Basic Elastic Stack Deployment](./basic/README.md)
+2. [Deploy the Elastic Stack and a dedicated Monitoring Cluster](./monitoring/README.md).
 3. TODO - Hot/Warm/Cold deployment in a regional cluster.
 4. TODO - Spring petclinic with APM. Based on [elastic/spring-petclinic](https://github.com/elastic/spring-petclinic).
 
