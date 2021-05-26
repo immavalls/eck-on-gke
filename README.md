@@ -7,7 +7,7 @@ It's intended as a step by step guide to further investigate ECK capabilities on
 ## Pre-requisites
 
 - [Google Cloud SDK](https://cloud.google.com/sdk/install) configured on your laptop/workstation.
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/). At the moment, ECK requires version 1.11+. See [ECK requirements](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/k8s-quickstart.html).
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/). At the moment, ECK requires version 1.11+. See [ECK requirements](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-quickstart.html).
 - [jq](https://stedolan.github.io/jq//) (*Optional*). Command-line JSON processor.
 - [kubernetic](https://kubernetic.com/) (*Optional*). Kubernetes Desktop Client.
 
