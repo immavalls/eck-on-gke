@@ -5,7 +5,7 @@
 - It's a simple definition for an Elastic Stack version `7.11.2`, with a one-node Elasticsearch cluster, an APM server, EnterpriseSearch and a single Kibana instance.
     - The Elasticsearch nodes in the example are configured to limit container resources to 2G memory and 1 CPU.
     - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
-    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.5.0.html#feature-1.3.0).
+    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.3.0.html#feature-1.3.0).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
