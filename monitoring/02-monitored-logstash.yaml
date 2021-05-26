@@ -38,7 +38,7 @@ metadata:
   name: logstash-01
 spec:
   containers:
-  - image: docker.elastic.co/logstash/logstash:7.12.1
+  - image: docker.elastic.co/logstash/logstash:7.13.0
     name: logstash
     volumeMounts:
     - name: config-volume
@@ -77,7 +77,7 @@ metadata:
   name: logstash-02
 spec:
   containers:
-  - image: docker.elastic.co/logstash/logstash:7.10.1
+  - image: docker.elastic.co/logstash/logstash:7.13.0
     name: logstash2
     volumeMounts:
     - name: config-volume
