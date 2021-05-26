@@ -5,7 +5,7 @@
 - It's a simple definition for an Elastic Stack version `7.12.1`, with a one-node Elasticsearch cluster, an APM server, EnterpriseSearch and a single Kibana instance.
     - The Elasticsearch nodes in the example are configured to limit container resources to 2G memory and 1 CPU.
     - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
-    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.5.0.html#feature-1.3.0).
+    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.3.0.html#feature-1.3.0).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
@@ -87,7 +87,7 @@
 
 - Once the external IP is available, we can visit our kibana at https://<EXTERNAL_IP>:5601/. In the example: https://34.77.8.197:5601/. 
 
-- The certificate presented to us is self-signed one and we'll have to bypass the browser warnings. We could have assigned a valid http certificate. See the [docs](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-custom-http-certificate.html).
+- The certificate presented to us is self-signed one and we'll have to bypass the browser warnings. We could have assigned a valid http certificate. See the [docs](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-custom-http-certificate.html).
 
 - The operator has created a secret for our superuser elastic. Let's go get it. Two options: via kubectl retrieve the password:
 
@@ -116,7 +116,7 @@
 
         ![Enterprise Search](./img/entsearch-2.png)
 
-- Elasticsearch has not been published, though we can always use port forwarding to access our cluster directly. In production, consider [trafic splitting](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-traffic-splitting.html) to allow clients to access Elaticsearch.
+- Elasticsearch has not been published, though we can always use port forwarding to access our cluster directly. In production, consider [trafic splitting](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-traffic-splitting.html) to allow clients to access Elaticsearch.
 
     ```shell
     kubectl port-forward service/elasticsearch-sample-es-http 9200
@@ -219,7 +219,7 @@
 
 ### Upgrading the Elastic Stack
 
-- We can now proceed to upgrade the whole stack. It will just require to edit the file [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml) and replace all the `version: 7.11.2` with, for example, `version: 7.12.1` on all services (elasticsearch, apm, kibana, enterprise search).
+- We can now proceed to upgrade the whole stack. It will just require to edit the file [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml) and replace all the `version: 7.12.1` with, for example, `version: 7.13.0` on all services (elasticsearch, apm, kibana, enterprise search).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
@@ -242,15 +242,15 @@
 
 - As a default, the operator will do a rolling upgrade, one Elasticsearch instance at a time. It will terminate an instance and restart it in the newer version.
     - ECK uses StatefulSet-based orchestration from version `1.0+`. StatefulSets with ECK allow for even faster upgrades and configuration changes, since upgrades use the same persistent volume, rather than replicating data to the new nodes.
-    - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-pod-disruption-budget.html).
+    - We could also have changed the default [update strategy](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-update-strategy.html) or the [Pod disruption budget](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-pod-disruption-budget.html).
 
-- After upgrading Elasticsearch, ECK will take care of upgrading the whole stack. For Kibana, Enterprise Search and APM it will create new pods in version `7.12.1` to replace the old ones version `7.11.2`.
+- After upgrading Elasticsearch, ECK will take care of upgrading the whole stack. For Kibana, Enterprise Search and APM it will create new pods in version `7.13.0` to replace the old ones version `7.12.1`.
 
-- We can check the deployed instances using kubernetic. Visualizing any of the pod specifications we can see that they are now running version `7.12.1`.
+- We can check the deployed instances using kubernetic. Visualizing any of the pod specifications we can see that they are now running version `7.13.0`.
 
-    ![Elasticsearch version 7.12.1](./img/kubernetic-12.png)
+    ![Elasticsearch version 7.13.0](./img/kubernetic-12.png)
 
-- We can also see in the kibana monitoring UI the health of our cluster (green) with 3 nodes on version `7.12.1`
+- We can also see in the kibana monitoring UI the health of our cluster (green) with 3 nodes on version `7.13.0`
 
     ![Kibana monitoring](./img/kibana-monitoring-3-upgraded.png)
 
