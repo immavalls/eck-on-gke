@@ -1,14 +1,21 @@
 # Basic Elastic Stack Deployment
 
 - Once we [installed GKE and ECK](../install-gke-and-eck.md), we can proceed to deploy a simple example.
-- We will now install an Elastic Stack defined in the following file: [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml). You can check basic samples [here](https://github.com/elastic/cloud-on-k8s/tree/1.5/config/samples) and the documentation [here](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-orchestrating-elastic-stack-applications.html).
-- It's a simple definition for an Elastic Stack version `7.11.2`, with a one-node Elasticsearch cluster, an APM server, EnterpriseSearch and a single Kibana instance.
+- We will now install an Elastic Stack defined in the following file: [basic-complete-elastic-stack.yaml](basic-complete-elastic-stack.yaml). You can check basic samples [here](https://github.com/elastic/cloud-on-k8s/tree/1.6/config/samples) and the documentation [here](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-orchestrating-elastic-stack-applications.html).
+- It's a simple definition for an Elastic Stack version `7.12.1`, with a one-node Elasticsearch cluster, an APM server, EnterpriseSearch and a single Kibana instance.
     - The Elasticsearch nodes in the example are configured to limit container resources to 2G memory and 1 CPU.
-    - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
-    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.5.0.html#feature-1.3.0).
+    - Pods can be [customized](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-customize-pods.html) modifying the `pod template` to add parameters like the Elasticsearch heap. 
+    - The deployment will also mount on a 50Gb volume claim. Check the documentation for [Volume Claim Templates](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-volume-claim-templates.html). Starting in version `1.3.0` ECK supports [Elasticsearch volume expansion](https://www.elastic.co/guide/en/cloud-on-k8s/1.3/release-notes-1.5.0.html#feature-1.3.0).
 
     ```shell
     kubectl apply -f basic-complete-elastic-stack.yaml
+    ```
+
+    ```shell
+    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample created
+    kibana.kibana.k8s.elastic.co/kibana-sample created
+    apmserver.apm.k8s.elastic.co/apm-server-sample created
+    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample created
     ```
 
 - We can monitor the deployment via `kubectl` until the components are healthy:
@@ -19,30 +26,30 @@
 
     ```shell
     NAME                                                              HEALTH    NODES   VERSION   PHASE             AGE
-    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample   unknown           7.11.2    ApplyingChanges   26s
+    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample   unknown           7.12.1    ApplyingChanges   32s
 
     NAME                                         HEALTH   NODES   VERSION   AGE
-    kibana.kibana.k8s.elastic.co/kibana-sample   red              7.11.2    26s
+    kibana.kibana.k8s.elastic.co/kibana-sample   red              7.12.1    32s
 
     NAME                                             HEALTH   NODES   VERSION   AGE
-    apmserver.apm.k8s.elastic.co/apm-server-sample                              25s
+    apmserver.apm.k8s.elastic.co/apm-server-sample                              31s
 
     NAME                                                                        HEALTH   NODES   VERSION   AGE
-    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample   red              7.11.2    25s
+    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample   red              7.12.1    31s
     ```
 
     ```shell
     NAME                                                              HEALTH   NODES   VERSION   PHASE   AGE
-    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample   yellow   1       7.11.2    Ready   109s
+    elasticsearch.elasticsearch.k8s.elastic.co/elasticsearch-sample   yellow   1       7.12.1    Ready   2m47s
 
     NAME                                         HEALTH   NODES   VERSION   AGE
-    kibana.kibana.k8s.elastic.co/kibana-sample   green    1       7.11.2    109s
+    kibana.kibana.k8s.elastic.co/kibana-sample   green    1       7.12.1    2m47s
 
     NAME                                             HEALTH   NODES   VERSION   AGE
-    apmserver.apm.k8s.elastic.co/apm-server-sample   green    1       7.11.2    108s
+    apmserver.apm.k8s.elastic.co/apm-server-sample   green    1       7.12.1    2m46s
 
     NAME                                                                        HEALTH   NODES   VERSION   AGE
-    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample   red              7.11.2    108s
+    enterprisesearch.enterprisesearch.k8s.elastic.co/enterprise-search-sample   green    1       7.12.1    2m46s
     ```
 
 - And check on the associated pods:
@@ -115,6 +122,33 @@
     kubectl port-forward service/elasticsearch-sample-es-http 9200
     ```
 
+    - And then we can access our cluster:
+
+        ```shell
+        curl -k https://localhost:9200/_cluster/health\?pretty -u elastic
+        ```
+
+        ```json
+        {
+            "cluster_name" : "elasticsearch-sample",
+            "status" : "yellow",
+            "timed_out" : false,
+            "number_of_nodes" : 1,
+            "number_of_data_nodes" : 1,
+            "active_primary_shards" : 106,
+            "active_shards" : 106,
+            "relocating_shards" : 0,
+            "initializing_shards" : 0,
+            "unassigned_shards" : 6,
+            "delayed_unassigned_shards" : 0,
+            "number_of_pending_tasks" : 0,
+            "number_of_in_flight_fetch" : 0,
+            "task_max_waiting_in_queue_millis" : 0,
+            "active_shards_percent_as_number" : 94.64285714285714
+        }
+        ```
+
+
 ### Scaling Elasticsearch
 
 - Now that we have our stack up and running, we can scale Elasticsearch from 1 to 3 nodes. If we look at the pod section in kubernetes, or at the deployed pods, we will see that our Elasticsearch has only one node.
@@ -141,7 +175,7 @@
     metadata:
     name: elasticsearch-sample
     spec:
-    version: 7.11.2
+    version: 7.12.1
     nodeSets:
     - name: default
         count: 3

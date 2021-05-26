@@ -70,7 +70,7 @@ Or using the Google Cloud Console.
 - Deploy the operator.
 
     ```shell
-    kubectl apply -f https://download.elastic.co/downloads/eck/1.5.0/all-in-one.yaml
+    kubectl apply -f https://download.elastic.co/downloads/eck/1.6.0/all-in-one.yaml
     ```
 
 - This will create the custom resources, cluster roles, namespace elastic-system, the operator, etc. for us.
@@ -83,6 +83,7 @@ configmap/elastic-operator created
 customresourcedefinition.apiextensions.k8s.io/agents.agent.k8s.elastic.co created
 customresourcedefinition.apiextensions.k8s.io/apmservers.apm.k8s.elastic.co created
 customresourcedefinition.apiextensions.k8s.io/beats.beat.k8s.elastic.co created
+customresourcedefinition.apiextensions.k8s.io/elasticmapsservers.maps.k8s.elastic.co created
 customresourcedefinition.apiextensions.k8s.io/elasticsearches.elasticsearch.k8s.elastic.co created
 customresourcedefinition.apiextensions.k8s.io/enterprisesearches.enterprisesearch.k8s.elastic.co created
 customresourcedefinition.apiextensions.k8s.io/kibanas.kibana.k8s.elastic.co created
