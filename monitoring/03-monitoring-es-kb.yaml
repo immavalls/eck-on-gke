@@ -4,7 +4,7 @@ kind: Elasticsearch
 metadata:
   name: elasticsearch-monitoring
 spec:
-  version: 7.12.1
+  version: 7.13.0
   nodeSets:
   - name: default
     count: 1
@@ -27,7 +27,7 @@ spec:
               value: -Xms500m -Xmx500m
             resources:
               requests:
-                #cpu: 1 # no request means 0.1 by default (too little CPU)
+                kubectlcpu: 1 # no request means 0.1 by default (too little CPU)
                 memory: 1Gi
               limits:
                 memory: 1Gi
@@ -47,7 +47,7 @@ kind: Kibana
 metadata:
   name: kibana-monitoring
 spec:
-  version: 7.12.1
+  version: 7.13.0
   count: 1
   http:
     service:

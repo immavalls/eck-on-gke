@@ -1,7 +1,7 @@
 # Deploying and monitoring the ELK Stack
 
-- Once we've [installed GKE and ECK](../install-gke-and-eck.md), we can proceed to create an ELK stack, and a dedicated [monitoring cluster](https://www.elastic.co/guide/en/elasticsearch/reference/current/monitor-elasticsearch-cluster.html). 
-- We'll use [Metricbeat collection](https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-metricbeat.html) to gather the data.
+- Once we've [installed GKE and ECK](../install-gke-and-eck.md), we can proceed to create an ELK stack, and a dedicated [monitoring cluster](https://www.elastic.co/guide/en/elasticsearch/reference/7.13/monitor-elasticsearch-cluster.html). 
+- We'll use [Metricbeat collection](https://www.elastic.co/guide/en/elasticsearch/reference/7.13/configuring-metricbeat.html) to gather the data.
 - The example is built based on the following blog: https://www.elastic.co/blog/elastic-stack-monitoring-with-elastic-cloud-on-kubernetes and examples the example in https://github.com/elastic/cloud-on-k8s/blob/master/config/recipes/beats/stack_monitoring.yaml
 - This is not a production-ready example, just a simple example to get you started. 
     - We'll be deploying the ELK stack and the monitoring cluster in the same `default` k8s namespace.
@@ -13,8 +13,8 @@
 
 - The first step is to deploy the Elasticsearch cluster and Kibana instance to monitor, our production stack. 
   - The [01-monitored-es-kb.yaml](./01-monitored-es-kb.yaml) file describes a 3 node Elasticsearch cluster and 1 Kibana instance. Kibana is published via and [external Load Balancer](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#external-load-balancer-providers), setting [Service](https://kubernetes.io/docs/concepts/services-networking/service/) `type` to `LoadBalancer`.
-  - The labels `stack-monitoring.elastic.co/type` will allow Metricbeat to configure the [Elaticsearch](https://www.elastic.co/guide/en/beats/metricbeat/7.12/metricbeat-module-elasticsearch.html) and [Kibana](https://www.elastic.co/guide/en/beats/metricbeat/7.12/metricbeat-module-kibana.html) modules.
-  - With the annotation [`co.elastic.logs/enabled: "true"`](https://www.elastic.co/guide/en/beats/filebeat/7.12/configuration-autodiscover-hints.html#_co_elastic_logsenabled) we allow our monitoring Filebeat to capture only the logs from Pods that have this annotation set to `true` and send those to the monitoring cluster.
+  - The labels `stack-monitoring.elastic.co/type` will allow Metricbeat to configure the [Elaticsearch](https://www.elastic.co/guide/en/beats/metricbeat/7.13/metricbeat-module-elasticsearch.html) and [Kibana](https://www.elastic.co/guide/en/beats/metricbeat/7.13/metricbeat-module-kibana.html) modules.
+  - With the annotation [`co.elastic.logs/enabled: "true"`](https://www.elastic.co/guide/en/beats/filebeat/7.13/configuration-autodiscover-hints.html#_co_elastic_logsenabled) we allow our monitoring Filebeat to capture only the logs from Pods that have this annotation set to `true` and send those to the monitoring cluster.
 
 - Let's deploy:
 
@@ -42,7 +42,7 @@
     ```
 - We can now point our browser to https://EXTERNAL-IP:5601, in the example https://35.246.189.26:5601, and login with user `elastic` and the password we extracted from the secret, `234IrkC5886H9oPL3dK7lttD` in our example. 
     - As we are using self-signed certificates, we'll have to bypass the browser warning.
-- Feel free to load [sample data](https://www.elastic.co/guide/en/kibana/7.12/get-started.html#gs-get-data-into-kibana) into the Kibana instance, or play around.
+- Feel free to load [sample data](https://www.elastic.co/guide/en/kibana/7.13/get-started.html#gs-get-data-into-kibana) into the Kibana instance, or play around.
 - This is what we would see in Kubernetic, 3 pods for Elasticsearch Daemon Set, 1 for the Kibana service.
 
   ![Production Pods](./img/kubernetic-prod-pods.png)
@@ -51,9 +51,9 @@
 
 - We'll now go ahead and deploy a couple of Logstash instances. 
 - Logstash cannot be deployed using the ECK operator, and we can use the [Helm chart](https://github.com/elastic/helm-charts/tree/master/logstash). It's still not GA, so use it with caution in production, as it's not yet fully supported.
-- For the sake of simplicity here, we'll just deploy a couple of [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) named `logstash-01` and `logstash-02`, with a simple pipeline that user Logstash [heartbeat input plugin](https://www.elastic.co/guide/en/logstash/7.12/plugins-inputs-heartbeat.html) to send an event every 60 seconds. This will be configured using a k8s [ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/).
+- For the sake of simplicity here, we'll just deploy a couple of [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) named `logstash-01` and `logstash-02`, with a simple pipeline that user Logstash [heartbeat input plugin](https://www.elastic.co/guide/en/logstash/7.13/plugins-inputs-heartbeat.html) to send an event every 60 seconds. This will be configured using a k8s [ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/).
 - Before deploying, we need to make some changes to the file [02-monitored-logstash.yaml](./02-monitored-logstash.yaml), which also describes the Logstash `ConfigMap`.
-  - In order to monitor the cluster, we need to set a value for the [`monitoring.cluster_uuid:`](https://www.elastic.co/guide/en/logstash/7.12/monitoring-with-metricbeat.html#define-cluster__uuid), to bind Logstash metrics to the cluster we created in the first step. 
+  - In order to monitor the cluster, we need to set a value for the [`monitoring.cluster_uuid:`](https://www.elastic.co/guide/en/logstash/7.13/monitoring-with-metricbeat.html#define-cluster__uuid), to bind Logstash metrics to the cluster we created in the first step. 
   - The `cluster_uuid` is in the annotations for that cluster. Execute the following to get it:
 
     ```shell
@@ -62,9 +62,9 @@
     wZfJcRAOToubncOnkN_6rg
     ```
   - And update the [ConfigMap](./02-monitored-logstash.yaml) accordingly. In our case, we changed `monitoring.cluster_uuid: changeme` to `monitoring.cluster_uuid: wZfJcRAOToubncOnkN_6rg`.
-  - Next we need to update the `elastic` user password in the `ConfigMap`. Note that this is not what we would do in production, we would create a [dedicated user with limited permissions](https://www.elastic.co/guide/en/logstash/7.12/ls-security.html#ls-http-auth-basic). We'll use the `elastic` user here for simplicity, as this is a getting started example.
+  - Next we need to update the `elastic` user password in the `ConfigMap`. Note that this is not what we would do in production, we would create a [dedicated user with limited permissions](https://www.elastic.co/guide/en/logstash/7.13/ls-security.html#ls-http-auth-basic). We'll use the `elastic` user here for simplicity, as this is a getting started example.
   - Update the [ConfigMap](./02-monitored-logstash.yaml), in our case, we changed `password => "changeme"` to `password => "234IrkC5886H9oPL3dK7lttD"`; the password extracted in the first step.
-- Note that we defined a label, `monitoring_label_type: ls`, that we'll later use to configure the [Metricbeat Logstash module](https://www.elastic.co/guide/en/beats/filebeat/7.12/filebeat-module-logstash.html) to collect its metrics.
+- Note that we defined a label, `monitoring_label_type: ls`, that we'll later use to configure the [Metricbeat Logstash module](https://www.elastic.co/guide/en/beats/filebeat/7.13/filebeat-module-logstash.html) to collect its metrics.
 - We can go ahead and create the Logstash Pods and ConfigMap.
 
     ```shell
@@ -97,7 +97,7 @@
     ![Logstash-01 Pod Logs](./img/kubernetic-logstash-pods-logs.png)
 
 - Finally, if we log into Kibana, we should be able to see a new index, `logstash-heartbeat-YYYY.MM`. In our case, `logstash-heartbeat-2021.01`. 
-    - We can create an [index pattern](https://www.elastic.co/guide/en/kibana/7.12/index-patterns.html) to view the data on [Kibana Discover](https://www.elastic.co/guide/en/kibana/7.12/discover.html).
+    - We can create an [index pattern](https://www.elastic.co/guide/en/kibana/7.13/index-patterns.html) to view the data on [Kibana Discover](https://www.elastic.co/guide/en/kibana/7.13/discover.html).
  
      ![Logstash Heartbeat Discover](./img/logstash-heartbeat-discover.png)
 
@@ -130,7 +130,7 @@
 
    ![Monitoring Cluster](./img/kubernetic-monitoring-pods.png) 
 
-- This is still an emtpy cluster, nothing will show up on [Kibana Stack Monitoring](https://www.elastic.co/guide/en/kibana/7.12/xpack-monitoring.html). We need to deploy Metricbeat and Filebeat to collect metrics and logs, and send them to this cluster. Which we'll do in the final step ahead.
+- This is still an emtpy cluster, nothing will show up on [Kibana Stack Monitoring](https://www.elastic.co/guide/en/kibana/7.13/xpack-monitoring.html). We need to deploy Metricbeat and Filebeat to collect metrics and logs, and send them to this cluster. Which we'll do in the final step ahead.
 
     ![Empty monitoring](./img/empty-monitoring.png)
 
@@ -182,7 +182,7 @@
   ![Filebeat DaemonSet](./img/kubernetic-filebeat-daemon-set.png) 
   ![Beat's pods](./img/kubernetic-beats-pods.png)
 
-- Note also that we needed to create some cluster roles and service acounts to give Beats the [right authorizations for autodiscover](https://www.elastic.co/guide/en/cloud-on-k8s/1.5/k8s-beat-configuration.html#k8s-beat-role-based-access-control-for-beats). Make sure you check requirements more recent versions, as they can change.
+- Note also that we needed to create some cluster roles and service acounts to give Beats the [right authorizations for autodiscover](https://www.elastic.co/guide/en/cloud-on-k8s/1.6/k8s-beat-configuration.html#k8s-beat-role-based-access-control-for-beats). Make sure you check requirements more recent versions, as they can change.
 - Once this is in place, we can now go back to Kibana Stack Monitoring and we should see our stack.
 
     ![Kibana Stack Monitoring](./img/kibana-stack-monitoring.png)
